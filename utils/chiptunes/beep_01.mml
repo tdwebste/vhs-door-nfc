@@ -1,0 +1,17 @@
+/** Music Macro Language (MML) exported from Bosca Ceoil */
+// instrument "Square Wave"
+#@0{0 0 0 // Square wave
+5 63 00 00 63 00 00 1 0 01 0 0 0 0 0};
+
+
+
+// === Bosca Ceoil track with up to 1 notes played at a time
+
+// ---- track
+
+t200 l16 // timing (tempo and note length)
+
+
+// pattern 0
+%6@0 v16 @f128,0
+o5c     r     r     r   ;

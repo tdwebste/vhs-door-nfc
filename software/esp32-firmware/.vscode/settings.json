@@ -1,0 +1,9 @@
+{
+    "terminal.integrated.env.osx": {
+        "PATH": "/Users/rsim/.platformio/penv/bin:/Users/rsim/.platformio/penv:/Users/rsim/dev/cocos2d-x-3.5/templates:/Users/rsim/dev/cocos2d-x-3.5/tools/cocos2d-console/bin:/Users/rsim/.fastlane/bin:/Users/rsim/dev/gcc-arm-none-eabi-5_4-2016q3/bin:/Users/rsim/miniconda2/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/X11/bin:/usr/local/share/npm/bin:/Users/rsim/dev/xtensa-esp32-elf/bin:/Applications/Postgres.app/Contents/Versions/latest/bin:./node_modules/.bin/:/Users/rsim/dev/apache-maven-3.3.9/bin:/Users/rsim/Library/Android/sdk/platform-tools:/Users/rsim/Library/Android/sdk/tools",
+        "PLATFORMIO_CALLER": "vscode"
+    },
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true
+}
