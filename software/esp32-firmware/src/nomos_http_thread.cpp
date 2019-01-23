@@ -104,7 +104,6 @@ static bool send_request(struct esp_tls* tls, const char* header, const char* bo
                                      requestBuff + written_bytes,
                                      strlen(requestBuff) - written_bytes);
         if (ret > 0) {
-            // ESP_LOGI(TAG, "%d bytes written", ret);
             written_bytes += ret;
         } else if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
             ESP_LOGE(TAG, "esp_tls_conn_write  returned 0x%x", ret);
@@ -116,15 +115,10 @@ static bool send_request(struct esp_tls* tls, const char* header, const char* bo
 }
 
 static bool read_response(struct esp_tls* tls, NomosHttpResponseType responseType, NomosHttpResponseResult* pResult) {
-    // char json[] = R"!({"valid":true,"type":"vhs_membership_keyholder","privileges":[],"userId":123,"username":"Foo.Bar"})!";
-    // JsonObject& f = jsonBuffer.parseObject(json);
-    // assert(f.success());
-
     bzero(readBuffer, ARRAY_COUNT(readBuffer));
 
     int ret;
     int len = 0;
-    // int chunks = 0;
 
     do {
         int maxLen = (ARRAY_COUNT(readBuffer) - len) - 1;
@@ -139,35 +133,19 @@ static bool read_response(struct esp_tls* tls, NomosHttpResponseType responseTyp
         }
 
         len += ret;
-        // if (ret > 0) {
-        //     ESP_LOGI(TAG, "%d bytes read", ret);
-        //     chunks++;
-        // }
     } while (ret != 0);
-
-    // ESP_LOGI(TAG, "connection closed");
 
     assert(len < ARRAY_COUNT(readBuffer));
     readBuffer[len] = '\0';
-
-    // ESP_LOGI(TAG, "%d bytes read", len);
-    // ESP_LOGI(TAG, "%d bytes read in %d chunks", len, chunks);
 
     char* statusEnd       = strchr(readBuffer, '\r');
     bool  successResponse = strncmp(readBuffer, "HTTP/1.1 200 OK", statusEnd - readBuffer) == 0;
     if (!successResponse) {
         *statusEnd = '\0';
         ESP_LOGE(TAG, "Status code not 200 OK.");
-        // Print response directly to stdout (don't require a large printf buffer)
-        // for (int i = 0; i < len; i++) {
-        //     putchar(readBuffer[i]);
-        // }
         return false;
     }
 
-    // char* pStart = readBuffer;
-    // while (*pStart && (*pStart < 0x20))
-    //     pStart++;
     const char* headerTerminator = "\r\n\r\n";
     char*       pBodyStart       = strstr(readBuffer, headerTerminator) + strlen(headerTerminator);
 
@@ -197,9 +175,6 @@ static bool read_response(struct esp_tls* tls, NomosHttpResponseType responseTyp
                 const JsonArray& privileges = root["privileges"].as<const JsonArray&>();
                 if (privileges != JsonArray::invalid()) {
                     for (auto privilege : privileges) {
-                        // JsonObject& priv = privilege.as<JsonObject>();
-                        // printf("Privilege %s: %s\n", (priv.containsKey("code")) ? priv["code"].as<const char *>() : "n/a", (priv.containsKey("enabled")) ? ((priv["enabled"].as<bool>()) ? "true" : "false") : "n/a");
-
                         if (strcmp(privilege["code"].as<const char*>(), "door") == 0) {
                             if (privilege["enabled"].as<bool>() == true) {
                                 pResult->bHasDoorAccess = true;
@@ -220,30 +195,15 @@ static bool read_response(struct esp_tls* tls, NomosHttpResponseType responseTyp
             } else {
                 ESP_LOGE(TAG, "JSON data missing expected fields.");
 
-                // printf("Raw body: @@@@");
-                // // Print response directly to stdout (don't require a large printf buffer)
-                // for (int i = 0; i < bodyLen; i++) {
-                //     putchar(pBodyStart[i]);
-                // }
-                // printf("@@@@\n\n\n");
-
                 return false;
             }
         } else {
             ESP_LOGE(TAG, "Unknown data format (not JSON).");
 
-            // printf("Raw body: @@@@");
-            // // Print response directly to stdout (don't require a large printf buffer)
-            // for (int i = 0; i < bodyLen; i++) {
-            //     putchar(pBodyStart[i]);
-            // }
-            // printf("@@@@\n\n\n");
-
             return false;
         }
     } else if (responseType == NOMOS_RT_BOOLEAN) {
         bool bValue = strncmp(pBodyStart, "true", 4) == 0;
-        // printf("Response: %s\n", (bValue) ? "true" : "false");
 
         pResult->bValue = bValue;
     }
@@ -261,10 +221,6 @@ static bool https_request(esp_tls_cfg_t* pCfg, NomosHttpResponseType responseTyp
         return false;
     }
 
-    // ESP_LOGI(TAG, "Connection established.");
-
-    // printf("\n\n\n");
-
     if (!send_request(tls, header, body)) {
         ESP_LOGE(TAG, "Request send failed.");
         esp_tls_conn_delete(tls);
@@ -276,13 +232,9 @@ static bool https_request(esp_tls_cfg_t* pCfg, NomosHttpResponseType responseTyp
         return false;
     }
 
-    // printf("\n\n\n");
-
     esp_tls_conn_delete(tls);
     return true;
 }
-
-// static char taskListOutput[40*16] = { 0 };
 
 static void nomos_https_task(void* pvParameters) {
     esp_tls_cfg_t cfg = {
@@ -301,13 +253,10 @@ static void nomos_https_task(void* pvParameters) {
             mainNotificationArgs.NomosHttpRequestResult.httpNotification = httpNotification;
 
             if (httpNotification == NOMOS_HTTP_NOTIFICATION_RequestValidate) {
-                // ESP_LOGI(TAG, "Validating: %s", nomosHttpRequestBody);
                 mainNotificationArgs.NomosHttpRequestResult.success = https_request(&cfg, NOMOS_RT_BOOLEAN, WEB_URL_VALIDATE, REQUEST_VALIDATE, nomosHttpRequestBody, &mainNotificationArgs.NomosHttpRequestResult.result);
             } else if (httpNotification == NOMOS_HTTP_NOTIFICATION_RequestRfid) {
-                // ESP_LOGI(TAG, "Checking RFID: %s", nomosHttpRequestBody);
                 mainNotificationArgs.NomosHttpRequestResult.success = https_request(&cfg, NOMOS_RT_JSON, WEB_URL_CHECK_RFID, REQUEST_CHECK_RFID, nomosHttpRequestBody, &mainNotificationArgs.NomosHttpRequestResult.result);
             } else if (httpNotification == NOMOS_HTTP_NOTIFICATION_RequestPin) {
-                // ESP_LOGI(TAG, "Checking Pin: %s", nomosHttpRequestBody);
                 mainNotificationArgs.NomosHttpRequestResult.success = https_request(&cfg, NOMOS_RT_JSON, WEB_URL_CHECK_PIN, REQUEST_CHECK_PIN, nomosHttpRequestBody, &mainNotificationArgs.NomosHttpRequestResult.result);
             } else {
                 mainNotificationArgs.NomosHttpRequestResult.success = false;
@@ -318,36 +267,6 @@ static void nomos_https_task(void* pvParameters) {
                 // Erk. Did not add to the queue. Oh well? User can just try again when they realize...
             }
         }
-        /* Wait for the callback to set the CONNECTED_BIT in the
-           event group.
-        */
-        // xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
-        //                     false, true, portMAX_DELAY);
-        // ESP_LOGI(TAG, "Starting HTTPS tests (cert is %u bytes)...", nomos_root_cert_pem_end - nomos_root_cert_pem_start);
-
-        // ESP_LOGI(TAG, "\n\nValidating...");
-        // https_request(&cfg, NOMOS_RT_BOOLEAN, WEB_URL_VALIDATE, REQUEST_VALIDATE, "{ \"key\": \"04:50:8C:EA:50:49:80\" }");
-
-        // ESP_LOGI(TAG, "Checking RFID...");
-        // https_request(&cfg, NOMOS_RT_JSON, WEB_URL_CHECK_RFID, REQUEST_CHECK_RFID, "{ \"rfid\": \"04:50:8C:EA:50:49:80\" }");
-
-        // ESP_LOGI(TAG, "Checking Pin...");
-        // https_request(&cfg, NOMOS_RT_JSON, WEB_URL_CHECK_PIN, REQUEST_CHECK_PIN, "{ \"pin\": \"134679\" }");
-
-        // ESP_LOGI(TAG, "User...");
-        // https_request(&cfg, NOMOS_RT_JSON, WEB_URL_USER, REQUEST_USER, "{ \"userid\": 46 }");
-
-        //
-        // vTaskList(taskListOutput);
-        // printf("Task List:\n%s\n\n", taskListOutput);
-
-        // vTaskDelay(50000 / portTICK_PERIOD_MS);
-        // for (int countdown = 10; countdown >= 0; countdown--)
-        // {
-        //     ESP_LOGI(TAG, "%d...", countdown);
-        //     vTaskDelay(1000 / portTICK_PERIOD_MS);
-        // }
-        // ESP_LOGI(TAG, "Starting again!");
     }
 }
 

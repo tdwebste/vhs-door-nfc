@@ -48,8 +48,8 @@ extern "C" {
 #define TAG "NOMOS"
 
 
-#define SDA_GPIO GPIO_NUM_13 //GPIO_NUM_21    //GPIO_NUM_16
-#define SCL_GPIO GPIO_NUM_16 //GPIO_NUM_22    //GPIO_NUM_17
+#define SDA_GPIO GPIO_NUM_13
+#define SCL_GPIO GPIO_NUM_16
 
 i2c_dev_t i2c_ds3231;
 
@@ -58,10 +58,9 @@ int init_ethernet() {
     tcpip_adapter_ip_info_t ip;
     uint8_t                 timeout = 0;
 
-    /* Clear ip info */
     memset(&ip, 0, sizeof(tcpip_adapter_ip_info_t));
 
-    /* Initialize ethernet */
+    // Initialize ethernet
     printf("Initialize LAN...");
     fflush(stdout);
     if (initEthernet() != ESP_OK) {
@@ -71,7 +70,7 @@ int init_ethernet() {
     }
     printf("[ \033[32mDONE\033[0m ]\n");
 
-    /* Wait for IP */
+    // Wait for IP
     printf("Receiving address...");
     fflush(stdout);
     while (timeout++ < 10) {
@@ -117,7 +116,7 @@ void init_time() {
     sntp_setservername(3, (char*)"ca.pool.ntp.org");
     sntp_init();
 
-    // wait for time to be set
+    // Wait for time to be set
     time_t    now         = 0;
     struct tm timeinfo    = {};
     int       retry       = 0;
@@ -132,7 +131,6 @@ void init_time() {
 
     if (timeinfo.tm_year >= (2018 - 1900)) {
         time_t now;
-        // update 'now' variable with current time
         time(&now);
 
         // Set timezone to Pacific Standard Time (America/Vancouver) and print local time
@@ -188,87 +186,8 @@ void init_time() {
     }
 }
 
-
-// static void rfid_task(void *pvParameters)
-// {
-//     /* Configure parameters of an UART driver,
-//      * communication pins and install the driver */
-//     uart_config_t uart_config = {
-//         .baud_rate = 38400,
-//         .data_bits = UART_DATA_8_BITS,
-//         .parity = UART_PARITY_DISABLE,
-//         .stop_bits = UART_STOP_BITS_1,
-//         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-//         .rx_flow_ctrl_thresh = 0,
-//         .use_ref_tick = false};
-//     ESP_ERROR_CHECK(uart_param_config(UART_NUM_1, &uart_config));
-//     ESP_ERROR_CHECK(uart_set_pin(UART_NUM_1, RFID_UART_TXD, RFID_UART_RXD, RFID_UART_RTS, RFID_UART_CTS));
-//     ESP_ERROR_CHECK(uart_driver_install(UART_NUM_1, RFID_UART_BUFFER_SIZE * 2, 0, 0, NULL, 0));
-
-//     const char* rfid_eeprom_read_cmd = "e1\r\ner0,39\r\n";
-//     uart_write_bytes(UART_NUM_1, (const char*)rfid_eeprom_read_cmd, strlen(rfid_eeprom_read_cmd));
-
-//     while (1)
-//     {
-//         // Read data from the UART
-//         int len = uart_read_bytes(UART_NUM_1, (uint8_t*)rfidUartBuffer, RFID_UART_BUFFER_SIZE - 1, 20 / portTICK_RATE_MS);
-//         if (len > 0)
-//         {
-//             rfidUartBuffer[len] = '\0';
-//             // char rfidData[512] = {};
-//             // *rfidData = '\0';
-//             // for (int i = 0; i < len; i++)
-//             // {
-//             //     char data[8];
-//             //     sprintf(data, "%02x", rfidUartBuffer[i]);
-//             //     strcat(rfidData, data);
-//             //     if (i != (len - 1))
-//             //     {
-//             //         strcat(rfidData, ":");
-//             //     }
-//             // }
-//             // ESP_LOGI("RFID", "%d bytes received: %s", len, rfidData);
-//             ESP_LOGI("RFID", "%d bytes received", len);
-//             printf(rfidUartBuffer);
-//             printf("\n");
-//         }
-//         // Write data back to the UART
-//         // uart_write_bytes(UART_NUM_1, (const char *) data, len);
-//     }
-// }
-
 extern "C" {
 void app_main(void) {
-    // uint8_t ch;
-    // uint16_t timeout_ms;
-
-    // printf("-------------------------------------\n");
-    // printf("Press \033[1mENTER\033[0m to start the demo...\n");
-    // UART_WAIT_KEY();
-
-    // do {
-    //     printf("\n\033[1m========== Ethernet Demo ==========\033[0m\n");
-    //     printf("Start...");
-    //     fflush(stdout);
-    //     UART_FLUSH();
-
-    //     timeout_ms = 1000;
-    //     while(--timeout_ms && uart_rx_one_char(&ch) != ESP_OK)
-    //         vTaskDelay(1 / portTICK_PERIOD_MS);
-    //     if(timeout_ms) {
-    //         printf("[ \033[35m------\033[0m ]\n");
-    //     } else {
-    //         printf("[ \033[32mDONE\033[0m ]\n");
-    //         testEthernet();
-    //     }
-    //     UART_FLUSH();
-    //     printf("Press \033[1mENTER\033[0m to finish or \033[1mR\033[0m to repeat...\n");
-    //     UART_WAIT_KEY();
-    // } while((ch == 'r' || ch == 'R'));
-
-    // while(1)
-    //     vTaskDelay(1000 / portTICK_PERIOD_MS);
-
     // Initialize NVS — it is used to store PHY calibration data
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
@@ -305,8 +224,5 @@ void app_main(void) {
     is_vhs_open_http_thread_create();
 
     main_thread_run();
-
-    //
-    // esp_eth_disable();
 }
 }

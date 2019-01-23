@@ -245,7 +245,6 @@ static void onStateChange(MainStateMachine::State_e oldState, MainStateMachine::
     char dateTimeStr[64];
     strftime(dateTimeStr, sizeof(dateTimeStr), "%c", &timeinfo);
 
-    // double dTime = esp_timer_get_time() / (double)SECONDS_IN_US(1);
     ESP_LOGI(TAG, "State change: %s -> %s at %s",
              MainStateMachine::GetStateName(oldState),
              MainStateMachine::GetStateName(newState),

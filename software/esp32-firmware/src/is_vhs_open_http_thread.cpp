@@ -75,7 +75,6 @@ static bool send_request(struct esp_tls* tls, const char* header, const char* bo
                                      requestBuff + written_bytes,
                                      strlen(requestBuff) - written_bytes);
         if (ret > 0) {
-            // ESP_LOGI(TAG, "%d bytes written", ret);
             written_bytes += ret;
         } else if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
             ESP_LOGE(TAG, "esp_tls_conn_write  returned 0x%x", ret);
@@ -106,46 +105,21 @@ static bool read_response(struct esp_tls* tls, bool* pResult) {
         }
 
         len += ret;
-        // if (ret > 0) {
-        //     ESP_LOGI(TAG, "%d bytes read", ret);
-        //     chunks++;
-        // }
     } while (ret != 0);
-
-    // ESP_LOGI(TAG, "connection closed");
 
     assert(len < ARRAY_COUNT(readBuffer));
     readBuffer[len] = '\0';
-
-    // ESP_LOGI(TAG, "%d bytes read", len);
-    // ESP_LOGI(TAG, "%d bytes read in %d chunks", len, chunks);
 
     char* statusEnd       = strchr(readBuffer, '\r');
     bool  successResponse = strncmp(readBuffer, "HTTP/1.1 200 OK", statusEnd - readBuffer) == 0;
     if (!successResponse) {
         *statusEnd = '\0';
         ESP_LOGE(TAG, "Status code not 200 OK.");
-        // Print response directly to stdout (don't require a large printf buffer)
-        // for (int i = 0; i < len; i++) {
-        //     putchar(readBuffer[i]);
-        // }
         return false;
     }
 
-    // char* pStart = readBuffer;
-    // while (*pStart && (*pStart < 0x20))
-    //     pStart++;
     const char* headerTerminator = "\r\n\r\n";
     char*       pBodyStart       = strstr(readBuffer, headerTerminator) + strlen(headerTerminator);
-
-    // int bodyLen = strlen(pBodyStart);
-    // ESP_LOGI(TAG, "Body length: %d bytes", bodyLen);
-    // printf("Raw body: @@@@");
-    // // Print response directly to stdout (don't require a large printf buffer)
-    // for (int i = 0; i < bodyLen; i++) {
-    //     putchar(pBodyStart[i]);
-    // }
-    // printf("@@@@\n\n\n");
 
     JsonObject& root = jsonBuffer.parseObject(pBodyStart);
     if (root.success()) {
@@ -160,24 +134,10 @@ static bool read_response(struct esp_tls* tls, bool* pResult) {
         } else {
             ESP_LOGE(TAG, "JSON data missing expected fields.");
 
-            // printf("Raw body: @@@@");
-            // // Print response directly to stdout (don't require a large printf buffer)
-            // for (int i = 0; i < bodyLen; i++) {
-            //     putchar(pBodyStart[i]);
-            // }
-            // printf("@@@@\n\n\n");
-
             return false;
         }
     } else {
         ESP_LOGE(TAG, "Unknown data format (not JSON).");
-
-        // printf("Raw body: @@@@");
-        // // Print response directly to stdout (don't require a large printf buffer)
-        // for (int i = 0; i < bodyLen; i++) {
-        //     putchar(pBodyStart[i]);
-        // }
-        // printf("@@@@\n\n\n");
 
         return false;
     }
@@ -195,10 +155,6 @@ static bool https_request(esp_tls_cfg_t* pCfg, const char* web_url, const char* 
         return false;
     }
 
-    // ESP_LOGI(TAG, "Connection established.");
-
-    // printf("\n\n\n");
-
     if (!send_request(tls, header, body)) {
         ESP_LOGE(TAG, "Request send failed.");
         esp_tls_conn_delete(tls);
@@ -209,8 +165,6 @@ static bool https_request(esp_tls_cfg_t* pCfg, const char* web_url, const char* 
         esp_tls_conn_delete(tls);
         return false;
     }
-
-    // printf("\n\n\n");
 
     esp_tls_conn_delete(tls);
     return true;

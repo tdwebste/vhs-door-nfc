@@ -117,22 +117,7 @@ static void uart_task(void* pvParameters) {
         int len = uart_read_bytes(UART_NUM_1, (uint8_t*)stm32UartBuffer, STM32_UART_BUFFER_SIZE - 1, 20 / portTICK_RATE_MS);
         if (len > 0) {
             stm32UartBuffer[len] = '\0';
-            // char rfidData[512] = {};
-            // *rfidData = '\0';
-            // for (int i = 0; i < len; i++)
-            // {
-            //     char data[8];
-            //     sprintf(data, "%02x", stm32UartBuffer[i]);
-            //     strcat(rfidData, data);
-            //     if (i != (len - 1))
-            //     {
-            //         strcat(rfidData, ":");
-            //     }
-            // }
-            // ESP_LOGI("RFID", "%d bytes received: %s", len, rfidData);
-            // ESP_LOGI("UART", "%d bytes received", len);
-            // printf(stm32UartBuffer);
-            // printf("\n");
+
             if (strstr(stm32UartBuffer, rfid_cmd_prefix) == stm32UartBuffer) {
                 for (int i = 0; i < len; i++) {
                     if (stm32UartBuffer[i] == '\n') {
@@ -170,10 +155,6 @@ static void uart_task(void* pvParameters) {
                 }
             }
         }
-        // Write data back to the UART
-        // uart_write_bytes(UART_NUM_1, (const char *) data, len);
-
-        // taskYIELD();
     }
 }
 
@@ -183,8 +164,6 @@ void uart_init() {
 
     UART_queueHandle = xQueueCreateStatic(ARRAY_COUNT(UART_queueStorage), sizeof(UartNotification), (uint8_t*)UART_queueStorage, &UART_queueStructure);
 
-    /* Configure parameters of an UART driver,
-     * communication pins and install the driver */
     uart_config_t uart_config = {
         .baud_rate           = 115200,
         .data_bits           = UART_DATA_8_BITS,
