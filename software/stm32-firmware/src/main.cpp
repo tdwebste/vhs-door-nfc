@@ -159,7 +159,6 @@ static void setup() {
     keypad.attach(&onKeypadPressed);
     keypad.start();
 
-    // rfid.PCD_Init();
     // reset_chip();
 
     pc.printf("\nWaiting for an ISO14443A card.\n");
