@@ -187,15 +187,15 @@ static void loop() {
     // PIN
     if (pinTimeout.read_ms() > 5000) {
         // Send whatever has been entered already
-        // Minimum 5 characters (single digit user ID, 4 digit pin)
-        if (strlen(pinCode) >= 5) {
-            pinCompleted = true;
-        }
+        pinCompleted = true;
     }
 
     if (pinCompleted) {
-        esp32.printf("PIN:%s\n", pinCode);
-        pc.printf("PIN completed: %s\n", pinCode);
+        // Minimum 5 characters (single digit user ID, 4 digit pin)
+        if (strlen(pinCode) >= 5) {
+            esp32.printf("PIN:%s\n", pinCode);
+            pc.printf("PIN completed: %s\n", pinCode);
+        }
 
         pinCode[0]   = '\0';
         pinCompleted = false;
