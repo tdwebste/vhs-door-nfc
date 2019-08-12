@@ -31,7 +31,7 @@ static char  pinCode[16]  = {};
 static bool  pinCompleted = false;
 static Timer pinTimeout;
 
-Serial pc(PA_9, PA_10, 115200);
+// Serial pc(PA_9, PA_10, 115200);
 
 static RawSerial esp32(PB_10, PB_11, 115200);
 static uint8_t   esp32RXBuffer[64] = {};
@@ -114,7 +114,7 @@ static void process_esp32_uart() {
             // Erk... just wrap if the buffer's full without a newline
             esp32RXLen = 0;
 
-            pc.printf("ERROR: Read buffer overflow from ESP32!\n");
+            // pc.printf("ERROR: Read buffer overflow from ESP32!\n");
         }
     }
 }
@@ -142,15 +142,15 @@ static uint32_t onKeypadPressed(uint32_t index) {
 }
 
 static void setup() {
-    pc.printf("MFRC522 initializing...\n");
+    // pc.printf("MFRC522 initializing...\n");
 
     esp32.attach(&process_esp32_uart);
 
     rfid.PCD_Init();
 
     /* Read RC522 version */
-    uint8_t rc522_version = rfid.PCD_ReadRegister(MFRC522::VersionReg);
-    pc.printf("MFRC522 version: %d\n", rc522_version & 0x07);
+    // uint8_t rc522_version = rfid.PCD_ReadRegister(MFRC522::VersionReg);
+    // pc.printf("MFRC522 version: %d\n", rc522_version & 0x07);
 
     //
     pinCode[0]   = '\0';
@@ -161,7 +161,7 @@ static void setup() {
 
     // reset_chip();
 
-    pc.printf("\nWaiting for an ISO14443A card.\n");
+    // pc.printf("\nWaiting for an ISO14443A card.\n");
 
     esp32.printf("STM32_READY\n");
 }
@@ -194,7 +194,7 @@ static void loop() {
         // Minimum 5 characters (single digit user ID, 4 digit pin)
         if (strlen(pinCode) >= 5) {
             esp32.printf("PIN:%s\n", pinCode);
-            pc.printf("PIN completed: %s\n", pinCode);
+            // pc.printf("PIN completed: %s\n", pinCode);
         }
 
         pinCode[0]   = '\0';
@@ -247,7 +247,7 @@ static void loop() {
 
     ledNFC = 0; // led on
 
-    DumpToSerial(&rfid.uid);
+    // DumpToSerial(&rfid.uid);
 
     esp32.printf("RFID:");
     for (int i = 0; i < rfid.uid.size; i++) {

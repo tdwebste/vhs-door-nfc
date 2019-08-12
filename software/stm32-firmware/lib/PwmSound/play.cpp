@@ -132,7 +132,7 @@
 #include "PwmSound.h"
 #include "ctype.h"
 
-extern Serial pc;	//for debug, comment out of not needed
+// extern Serial pc;	//for debug, comment out of not needed
 
  // Standard note pitches in Hz
 // From Wikipedia: http://en.wikipedia.org/wiki/Scientific_pitch_notation
@@ -185,7 +185,7 @@ int sharps[7] = {1, 0, 1, 1, 0, 1, 1 };         //not B or E
 // Returns: 0 if no error in input, otherwise position of offending character
 
 int PwmSound::play(const char* m, int options) {
-	bool run = true, kbdPoll = true;
+	bool run = true;//, kbdPoll = true;
     char c, c1;
     int n, n1, n2;
 
@@ -206,10 +206,10 @@ int PwmSound::play(const char* m, int options) {
     _haveNext = false;
     //pc.putc('[');
     while (run) {
-        if (kbdPoll && pc.readable()) {
-            pc.getc();
-            break;
-        }
+        // if (kbdPoll && pc.readable()) {
+        //     pc.getc();
+        //     break;
+        // }
         c = _getChar();  //read next char in input stream
         //pc.putc(c);
         switch (c) {
@@ -244,7 +244,7 @@ int PwmSound::play(const char* m, int options) {
                 break;
 
             case 'K':
-                kbdPoll = false;
+                // kbdPoll = false;
                 break;
 
             case 'L':   //set note length

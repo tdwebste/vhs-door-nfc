@@ -1,3 +1,4 @@
+#if 0
 #include <mbed.h>
 
 #include <MFRC522.h>
@@ -286,3 +287,4 @@ static void DumpMifareUltralightToSerial(void) {
         }
     }
 } // End PICC_DumpMifareUltralightToSerial()
+#endif // 0

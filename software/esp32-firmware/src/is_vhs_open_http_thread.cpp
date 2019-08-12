@@ -172,10 +172,18 @@ static bool https_request(esp_tls_cfg_t* pCfg, const char* web_url, const char* 
 
 static void is_vhs_open_http_task(void* pvParameters) {
     esp_tls_cfg_t cfg = {
-        .alpn_protos      = NULL,
-        .cacert_pem_buf   = is_vhs_open_root_cert_pem_start,
-        .cacert_pem_bytes = (uint32_t)is_vhs_open_root_cert_pem_end - (uint32_t)is_vhs_open_root_cert_pem_start,
-        .non_block        = false
+        .alpn_protos            = NULL,
+        .cacert_pem_buf         = is_vhs_open_root_cert_pem_start,
+        .cacert_pem_bytes       = (uint32_t)is_vhs_open_root_cert_pem_end - (uint32_t)is_vhs_open_root_cert_pem_start,
+        .clientcert_pem_buf     = NULL,
+        .clientcert_pem_bytes   = 0,
+        .clientkey_pem_buf      = NULL,
+        .clientkey_pem_bytes    = 0,
+        .clientkey_password     = NULL,
+        .clientkey_password_len = 0,
+        .non_block              = false,
+        .timeout_ms             = 0,
+        .use_global_ca_store    = false
     };
 
     while (1) {

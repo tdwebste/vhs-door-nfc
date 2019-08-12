@@ -30,7 +30,7 @@ extern "C" {
 #include "lwip/sys.h"
 #include "lwip/netdb.h"
 #include "lwip/dns.h"
-#include "apps/sntp/sntp.h"
+#include "lwip/apps/sntp.h"
 
 #include "esp_tls.h"
 
