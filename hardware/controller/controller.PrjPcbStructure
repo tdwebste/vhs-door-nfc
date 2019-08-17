@@ -1,1 +1,3 @@
-Record=TopLevelDocument|FileName=can-interface.SchDoc
+Record=TopLevelDocument|FileName=controller.SchDoc
+Record=SheetSymbol|SourceDocument=controller.SchDoc|Designator=can-interface|SchDesignator=can-interface|FileName=can-interface.SchDoc|SymbolType=Normal|RawFileName=can-interface.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol|RevisionGUID= |ItemGUID= |VaultGUID= 
+Record=SheetSymbol|SourceDocument=keypad.SchDoc|Designator=can-interface|SchDesignator=can-interface|FileName=can-interface.SchDoc|SymbolType=Normal|RawFileName=can-interface.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol|RevisionGUID= |ItemGUID= |VaultGUID= 
