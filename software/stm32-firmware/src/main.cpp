@@ -33,9 +33,13 @@ static Timer pinTimeout;
 
 // Serial pc(PA_9, PA_10, 115200);
 
-static RawSerial esp32(PB_10, PB_11, 115200);
-static uint8_t   esp32RXBuffer[64] = {};
-static int       esp32RXLen        = 0;
+// static RawSerial esp32(PB_10, PB_11, 115200);
+// static uint8_t   esp32RXBuffer[64] = {};
+// static int       esp32RXLen        = 0;
+
+static CAN can(PB_8, PB_9, 1000000);
+const uint32_t CAN_ID_STM32     = 0x7AA;    // 1962
+const uint32_t CAN_ID_ESP32     = 0x755;    // 1877
 
 enum ControlCmd {
     CCMD_NOP,
@@ -51,7 +55,9 @@ enum ControlCmd {
     CCMD_PLAY_FAILURE,
     CCMD_PLAY_SMB,
     CCMD_LOCK_DOOR,
-    CCMD_UNLOCK_DOOR
+    CCMD_UNLOCK_DOOR,
+
+    CCMD_Count
 };
 
 static CircularBuffer<ControlCmd, 16, uint8_t> commandBuffer;
@@ -71,53 +77,76 @@ MFRC522 rfid(SPI2_MOSI, SPI2_MISO, SPI2_SCK, MFRC522_SS_PIN, MFRC522_RST_PIN);
 //   rstNFC = 1;
 // }
 
-static void process_esp32_uart() {
-    int ch = esp32.getc();
+union uchar2int_ptr {
+    unsigned char* uchar_ptr;
+    int* int_ptr;
+};
 
-    esp32RXBuffer[esp32RXLen++] = (uint8_t)ch;
-    if ((ch == EOF) || (ch == '\n') || (ch == '\0')) {
-        if (esp32RXLen > 1) {
-            esp32RXBuffer[esp32RXLen - 1] = '\0';
+static void process_can_message() {
+    CANMessage msg;
+    if (can.read(msg)) {
+        if (msg.len == sizeof(ControlCmd)) {
+            // Work-around strict-aliasing rules by casting through a union
+            uchar2int_ptr caster;
+            caster.uchar_ptr = msg.data;
+            int icmd = *caster.int_ptr;
 
-            if (strcmp((const char*)esp32RXBuffer, "PLAY_BEEP_01") == 0) {
-                commandBuffer.push(CCMD_PLAY_BEEP_01);
-            } else if (strcmp((const char*)esp32RXBuffer, "PLAY_BEEP_02") == 0) {
-                commandBuffer.push(CCMD_PLAY_BEEP_02);
-            } else if (strcmp((const char*)esp32RXBuffer, "PLAY_BEEP_03") == 0) {
-                commandBuffer.push(CCMD_PLAY_BEEP_03);
-            } else if (strcmp((const char*)esp32RXBuffer, "PLAY_BEEP_04") == 0) {
-                commandBuffer.push(CCMD_PLAY_BEEP_04);
-            } else if (strcmp((const char*)esp32RXBuffer, "PLAY_BEEP_05") == 0) {
-                commandBuffer.push(CCMD_PLAY_BEEP_05);
-            } else if (strcmp((const char*)esp32RXBuffer, "PLAY_BEEP_06") == 0) {
-                commandBuffer.push(CCMD_PLAY_BEEP_06);
-            } else if (strcmp((const char*)esp32RXBuffer, "PLAY_BUZZER_01") == 0) {
-                commandBuffer.push(CCMD_PLAY_BUZZER_01);
-            } else if (strcmp((const char*)esp32RXBuffer, "PLAY_BUZZER_02") == 0) {
-                commandBuffer.push(CCMD_PLAY_BUZZER_02);
-            } else if (strcmp((const char*)esp32RXBuffer, "PLAY_SUCCESS") == 0) {
-                commandBuffer.push(CCMD_PLAY_SUCCESS);
-            } else if (strcmp((const char*)esp32RXBuffer, "PLAY_FAILURE") == 0) {
-                commandBuffer.push(CCMD_PLAY_FAILURE);
-            } else if (strcmp((const char*)esp32RXBuffer, "PLAY_SMB") == 0) {
-                commandBuffer.push(CCMD_PLAY_SMB);
-            } else if (strcmp((const char*)esp32RXBuffer, "LOCK_DOOR") == 0) {
-                commandBuffer.push(CCMD_LOCK_DOOR);
-            } else if (strcmp((const char*)esp32RXBuffer, "UNLOCK_DOOR") == 0) {
-                commandBuffer.push(CCMD_UNLOCK_DOOR);
+            if ((icmd >= 0) && (icmd < CCMD_Count)) {
+                ControlCmd cmd = (ControlCmd)icmd;
+
+                commandBuffer.push(cmd);
             }
-        }
-
-        esp32RXLen = 0;
-    } else {
-        if (esp32RXLen >= ((int)ARRAY_COUNT(esp32RXBuffer) - 1)) {
-            // Erk... just wrap if the buffer's full without a newline
-            esp32RXLen = 0;
-
-            // pc.printf("ERROR: Read buffer overflow from ESP32!\n");
         }
     }
 }
+
+// static void process_esp32_uart() {
+//     int ch = esp32.getc();
+
+//     esp32RXBuffer[esp32RXLen++] = (uint8_t)ch;
+//     if ((ch == EOF) || (ch == '\n') || (ch == '\0')) {
+//         if (esp32RXLen > 1) {
+//             esp32RXBuffer[esp32RXLen - 1] = '\0';
+
+//             if (strcmp((const char*)esp32RXBuffer, "PLAY_BEEP_01") == 0) {
+//                 commandBuffer.push(CCMD_PLAY_BEEP_01);
+//             } else if (strcmp((const char*)esp32RXBuffer, "PLAY_BEEP_02") == 0) {
+//                 commandBuffer.push(CCMD_PLAY_BEEP_02);
+//             } else if (strcmp((const char*)esp32RXBuffer, "PLAY_BEEP_03") == 0) {
+//                 commandBuffer.push(CCMD_PLAY_BEEP_03);
+//             } else if (strcmp((const char*)esp32RXBuffer, "PLAY_BEEP_04") == 0) {
+//                 commandBuffer.push(CCMD_PLAY_BEEP_04);
+//             } else if (strcmp((const char*)esp32RXBuffer, "PLAY_BEEP_05") == 0) {
+//                 commandBuffer.push(CCMD_PLAY_BEEP_05);
+//             } else if (strcmp((const char*)esp32RXBuffer, "PLAY_BEEP_06") == 0) {
+//                 commandBuffer.push(CCMD_PLAY_BEEP_06);
+//             } else if (strcmp((const char*)esp32RXBuffer, "PLAY_BUZZER_01") == 0) {
+//                 commandBuffer.push(CCMD_PLAY_BUZZER_01);
+//             } else if (strcmp((const char*)esp32RXBuffer, "PLAY_BUZZER_02") == 0) {
+//                 commandBuffer.push(CCMD_PLAY_BUZZER_02);
+//             } else if (strcmp((const char*)esp32RXBuffer, "PLAY_SUCCESS") == 0) {
+//                 commandBuffer.push(CCMD_PLAY_SUCCESS);
+//             } else if (strcmp((const char*)esp32RXBuffer, "PLAY_FAILURE") == 0) {
+//                 commandBuffer.push(CCMD_PLAY_FAILURE);
+//             } else if (strcmp((const char*)esp32RXBuffer, "PLAY_SMB") == 0) {
+//                 commandBuffer.push(CCMD_PLAY_SMB);
+//             } else if (strcmp((const char*)esp32RXBuffer, "LOCK_DOOR") == 0) {
+//                 commandBuffer.push(CCMD_LOCK_DOOR);
+//             } else if (strcmp((const char*)esp32RXBuffer, "UNLOCK_DOOR") == 0) {
+//                 commandBuffer.push(CCMD_UNLOCK_DOOR);
+//             }
+//         }
+
+//         esp32RXLen = 0;
+//     } else {
+//         if (esp32RXLen >= ((int)ARRAY_COUNT(esp32RXBuffer) - 1)) {
+//             // Erk... just wrap if the buffer's full without a newline
+//             esp32RXLen = 0;
+
+            // pc.printf("ERROR: Read buffer overflow from ESP32!\n");
+//         }
+//     }
+// }
 
 static uint32_t onKeypadPressed(uint32_t index) {
     char keyCode = Keytable[index];
@@ -144,7 +173,10 @@ static uint32_t onKeypadPressed(uint32_t index) {
 static void setup() {
     // pc.printf("MFRC522 initializing...\n");
 
-    esp32.attach(&process_esp32_uart);
+    can.filter(CAN_ID_ESP32, ~0u, CANStandard);
+    can.attach(process_can_message);
+
+    // esp32.attach(&process_esp32_uart);
 
     rfid.PCD_Init();
 
@@ -163,7 +195,7 @@ static void setup() {
 
     // pc.printf("\nWaiting for an ISO14443A card.\n");
 
-    esp32.printf("STM32_READY\n");
+    // esp32.printf("STM32_READY\n");
 }
 
 const char* BEEP_01   = "T200 L6 O3 C";
@@ -183,6 +215,59 @@ const char* smb = {
     "T180 O3 E8 E8 P8 E8 P8 C8 D#4 G4 P4 <G4 P4"
 };
 
+#define RFID_MSG_PREFIX "RFID:"
+#define PIN_MSG_PREFIX "PIN:"
+#define RFID_MSG_PREFIX_LEN     (ARRAY_COUNT(RFID_MSG_PREFIX) - 1)
+#define PIN_MSG_PREFIX_LEN      (ARRAY_COUNT(PIN_MSG_PREFIX) - 1)
+
+static void send_can(unsigned char* pBuffer, uint32_t size) {
+    uint8_t packets = (size + 5) / 6;
+
+    CANMessage msg;
+    for (uint8_t i=0; i<packets; i++) {
+        memset(&msg, 0, sizeof(msg));
+
+        msg.id = CAN_ID_STM32;
+        msg.format = CANStandard;
+        msg.type = CANData;
+        msg.len = (i != (packets - 1)) ? 8 : 2 + (size % 6);
+
+        msg.data[0] = i + 1;
+        msg.data[1] = packets;
+        memcpy(msg.data+2, pBuffer, msg.len-2);
+        pBuffer += msg.len-2;
+    }
+}
+
+static void process_rfid() {
+    // Look for new cards
+    if (!rfid.PICC_IsNewCardPresent()) {
+        return;
+    }
+
+    // Verify if the NUID has been readed
+    if (!rfid.PICC_ReadCardSerial()) {
+        return;
+    }
+
+    ledNFC = 0; // led on
+
+    DumpToSerial(&rfid.uid);
+
+    unsigned char rfid_msg[RFID_MSG_PREFIX_LEN + ARRAY_COUNT(rfid.uid.uidByte)];
+    memset(rfid_msg, 0, sizeof(rfid_msg));
+    strcpy((char*)rfid_msg, RFID_MSG_PREFIX);
+    // esp32.printf(RFID_MSG_PREFIX);
+    for (int i = 0; i < rfid.uid.size; i++) {
+        rfid_msg[RFID_MSG_PREFIX_LEN + i] = rfid.uid.uidByte[i];
+        // esp32.putc(rfid.uid.uidByte[i]);
+    }
+    send_can(rfid_msg, RFID_MSG_PREFIX_LEN + rfid.uid.size);
+    // esp32.putc('\n');
+
+    ledNFC = 1; // led off
+}
+
 static void loop() {
     // PIN
     if (pinTimeout.read_ms() > 5000) {
@@ -193,7 +278,15 @@ static void loop() {
     if (pinCompleted) {
         // Minimum 5 characters (single digit user ID, 4 digit pin)
         if (strlen(pinCode) >= 5) {
-            esp32.printf("PIN:%s\n", pinCode);
+            unsigned char pin_msg[PIN_MSG_PREFIX_LEN + 8];
+            memset(pin_msg, 0, sizeof(pin_msg));
+            strcpy((char*)pin_msg, PIN_MSG_PREFIX);
+            for (unsigned int i=0; i<strlen(pinCode); i++) {
+                pin_msg[PIN_MSG_PREFIX_LEN + i] = pinCode[i];
+            }
+            send_can(pin_msg, PIN_MSG_PREFIX_LEN + strlen(pinCode));
+            // esp32.printf(PIN_MSG_PREFIX);
+            // esp32.printf("%s\n", pinCode);
             // pc.printf("PIN completed: %s\n", pinCode);
         }
 
@@ -235,27 +328,9 @@ static void loop() {
         }
     }
 
-    // Look for new cards
-    if (!rfid.PICC_IsNewCardPresent()) {
-        return;
-    }
-
-    // Verify if the NUID has been readed
-    if (!rfid.PICC_ReadCardSerial()) {
-        return;
-    }
-
-    ledNFC = 0; // led on
-
+    // Check for and process if an RFID card is present
+    process_rfid();
     // DumpToSerial(&rfid.uid);
-
-    esp32.printf("RFID:");
-    for (int i = 0; i < rfid.uid.size; i++) {
-        esp32.putc(rfid.uid.uidByte[i]);
-    }
-    esp32.putc('\n');
-
-    ledNFC = 1; // led off
 }
 
 int main() {
